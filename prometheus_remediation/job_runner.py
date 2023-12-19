@@ -145,7 +145,7 @@ def run_job_from_alert(event: PrometheusKubernetesAlert, params: JobParams):
     job.create()
 
     if params.notify:
-        event.add_enrichment([MarkdownBlock(f"*Action Job Information* \n Created Job from alert: *{job_name}*.")])
+        event.add_enrichment([MarkdownBlock(f"*Action Job Information* \n Name: *{job_name}*.")])
 
     if params.wait_for_completion:
         try:
@@ -159,7 +159,6 @@ def run_job_from_alert(event: PrometheusKubernetesAlert, params: JobParams):
             if str(e) != "Failed to reach wait condition":
                 logging.warning(f"Action Job stopped due to Exception {e}")
             else:
-                err_str = f"Action Job {job_name} timed out. Could not fetch output"
-                logging.warning(err_str)
+                err_str = f"Status: Timed out, could not fetch output."
+                logging.warning(f"Action Job {job_name} - {err_str}")
                 event.add_enrichment([MarkdownBlock(err_str)])
-
