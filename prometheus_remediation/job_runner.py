@@ -147,7 +147,7 @@ def run_job_from_alert(event: PrometheusKubernetesAlert, params: JobParams):
     job.create()
 
     if params.notify:
-        event.add_enrichment([MarkdownBlock(f"**Action Job Information** \n Created Job from alert: *{job_name}*.")])
+        event.add_enrichment([MarkdownBlock(f"*Action Job Information* \n Created Job from alert: *{job_name}*.")])
 
     if params.wait_for_completion:
         try:
