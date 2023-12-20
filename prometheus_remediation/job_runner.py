@@ -157,7 +157,7 @@ def run_job_from_alert(event: PrometheusKubernetesAlert, params: JobParams):
             pod = job.get_single_pod()
             event.add_enrichment([
                 FileBlock("job-runner-logs.txt", pod.get_logs())
-                ]) 1
+                ])
         except Exception as e:
             if str(e) != "Failed to reach wait condition":
                 logging.warning(f"Action Job stopped due to Exception {e}")
