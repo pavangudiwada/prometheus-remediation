@@ -144,52 +144,30 @@ def run_job_from_alert(event: PrometheusKubernetesAlert, params: JobParams):
 
     job.create()
 
-    info_block = f""
+    info_messages = []
 
     if params.notify:
-        info_block += ""
-        event.add_enrichment([MarkdownBlock(f"*Created Job from alert: *{job_name}*.")])
+        info_messages.append(f"Created Job from alert: *{job_name}*.")
 
     if params.wait_for_completion:
         try:
             wait_until_job_complete(job, params.completion_timeout)
-            job = hikaru.from_dict(job.to_dict(), cls=RobustaJob)  # temporary workaround for https://github.com/haxsaw/hikaru/issues/15
+            job = hikaru.from_dict(job.to_dict(), cls=RobustaJob)  # workaround for issue
             pod = job.get_single_pod()
             event.add_enrichment([
                 FileBlock("job-runner-logs.txt", pod.get_logs())
                 ])
         except Exception as e:
             if str(e) != "Failed to reach wait condition":
-                logging.warning(f"Action Job stopped due to Exception {e}")
+                warning_msg = f"Action Job stopped due to Exception {e}"
+                logging.warning(warning_msg)
+                info_messages.append(warning_msg)
             else:
                 err_str = f"Status: Timed out, could not fetch output."
                 logging.warning(f"Action Job {job_name} - {err_str}")
-                event.add_enrichment([MarkdownBlock(err_str)])
+                info_messages.append(err_str)
 
-    # info_messages = []
-
-    # if params.notify:
-    #     info_messages.append(f"Created Job from alert: *{job_name}*.")
-
-    # if params.wait_for_completion:
-    #     try:
-    #         wait_until_job_complete(job, params.completion_timeout)
-    #         job = hikaru.from_dict(job.to_dict(), cls=RobustaJob)  # workaround for issue
-    #         pod = job.get_single_pod()
-    #         event.add_enrichment([
-    #             FileBlock("job-runner-logs.txt", pod.get_logs())
-    #             ])
-    #     except Exception as e:
-    #         if str(e) != "Failed to reach wait condition":
-    #             warning_msg = f"Action Job stopped due to Exception {e}"
-    #             logging.warning(warning_msg)
-    #             info_messages.append(warning_msg)
-    #         else:
-    #             err_str = f"Status: Timed out, could not fetch output."
-    #             logging.warning(f"Action Job {job_name} - {err_str}")
-    #             info_messages.append(err_str)
-
-    # # At the end, combine all messages and add them as a single enrichment
-    # if info_messages:
-    #     combined_message = "\n".join(info_messages)
-    #     event.add_enrichment([MarkdownBlock(combined_message)])
+    # At the end, combine all messages and add them as a single enrichment
+    if info_messages:
+        combined_message = "\n".join(info_messages)
+        event.add_enrichment([MarkdownBlock(combined_message)])
